@@ -2,6 +2,20 @@
 
 const PLACEHOLDER_IMG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3Crect fill='%23ffffff' opacity='0.05' width='1' height='1'/%3E%3C/svg%3E";
 
+// ================= FIREBASE INITIALIZATION =================
+const firebaseConfig = {
+  apiKey: "AIzaSyBYRTk0jLcLvlr29r843I2AEnmeTQQ4GJ4",
+  authDomain: "modengxmoojew.firebaseapp.com",
+  projectId: "modengxmoojew",
+  storageBucket: "modengxmoojew.firebasestorage.app",
+  messagingSenderId: "746912545122",
+  appId: "1:746912545122:web:d124a49d494d305ae0943b",
+  measurementId: "G-QZ7R8LGGL8"
+};
+firebase.initializeApp(firebaseConfig);
+const fbDb = firebase.database();
+const FB_REF = fbDb.ref('nexa_store_db');
+
 // ================= DATABASE / STATE MANAGEMENT =================
 let db = {
   settings: {
@@ -78,103 +92,128 @@ let selectedProduct = null;
 let currentView = "shop";
 
 // Initialize LocalStorage Data
-function loadDatabase() {
-  const localDb = localStorage.getItem("nexa_store_db_v6");
-  if (localDb) {
-    try {
-      db = JSON.parse(localDb);
-      // Ensure arrays exist
-      if (!db.products) db.products = [];
-      if (!db.users) db.users = [];
-      if (!db.orders) db.orders = [];
-      if (!db.recentPurchases) db.recentPurchases = [];
-      if (!db.settings) db.settings = {};
-      if (!db.announcements) db.announcements = [];
-      if (!db.categories) db.categories = [];
-    } catch (e) {
-      console.error("Error loading localStorage DB, using default.", e);
-    }
-  } else {
-    // Migrate from v5 if available
-    const oldDb = localStorage.getItem("nexa_store_db_v5");
-    if (oldDb) {
-      try {
-        db = JSON.parse(oldDb);
-        if (!db.announcements) db.announcements = [];
-        if (db.settings.topAnnBg === undefined) {
-          db.settings.topAnnEnabled = false;
-          db.settings.topAnnText = "";
-          db.settings.topAnnMode = "static";
-          db.settings.topAnnBg = "#ffffff";
-          db.settings.topAnnColor = "#ffffff";
-        }
-        if (db.settings.popupEnabled === undefined) {
-          db.settings.popupEnabled = false;
-          db.settings.popupTitle = "";
-          db.settings.popupImg = "";
-          db.settings.popupLink = "";
-        }
-        saveDatabase();
-      } catch (e) {
-        console.error("Migration error", e);
+function loadDatabase(callback) {
+  const doMigrations = () => {
+    // Ensure arrays exist
+    if (!db.products) db.products = [];
+    if (!db.users) db.users = [];
+    if (!db.orders) db.orders = [];
+    if (!db.recentPurchases) db.recentPurchases = [];
+    if (!db.settings) db.settings = {};
+    if (!db.announcements) db.announcements = [];
+    if (!db.categories) db.categories = [];
+    // Migration for separate Webhook URLs
+    if (db.settings) {
+      let migrated = false;
+      if (db.settings.webhookRegisterUrl === undefined) {
+        db.settings.webhookRegisterUrl = db.settings.webhookUrl || "";
+        migrated = true;
       }
+      if (db.settings.webhookRegisterEnabled === undefined) {
+        db.settings.webhookRegisterEnabled = db.settings.webhookOnRegister !== false;
+        migrated = true;
+      }
+      if (db.settings.webhookPurchaseUrl === undefined) {
+        db.settings.webhookPurchaseUrl = db.settings.webhookUrl || "";
+        migrated = true;
+      }
+      if (db.settings.webhookPurchaseEnabled === undefined) {
+        db.settings.webhookPurchaseEnabled = db.settings.webhookOnPurchase !== false;
+        migrated = true;
+      }
+      if (migrated) saveDatabase();
+    }
+    // Force update default admin password
+    const adminUser = db.users.find(u => u.username === "admin");
+    if (adminUser) {
+      adminUser.password = "0952235101Asd@@";
+      saveDatabase();
+    }
+    // Automatic upgrade from default white/black to rose theme
+    if (db.settings && db.settings.colorPrimary === "#ffffff") {
+      db.settings.colorPrimary = "#ff477e";
+      db.settings.colorBg = "#0b0f19";
+      saveDatabase();
+    }
+    if (callback) callback();
+  };
+  FB_REF.once('value').then(snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      db = data;
+      localStorage.setItem("nexa_store_db_v6", JSON.stringify(db));
+      doMigrations();
     } else {
-      saveDatabase();
+      // First visit — try localStorage, else defaults
+      const localDb = localStorage.getItem("nexa_store_db_v6");
+      if (localDb) {
+        try { db = JSON.parse(localDb); } catch (e) {}
+      } else {
+        const oldDb = localStorage.getItem("nexa_store_db_v5");
+        if (oldDb) {
+          try {
+            db = JSON.parse(oldDb);
+            if (!db.announcements) db.announcements = [];
+            if (db.settings && db.settings.topAnnBg === undefined) {
+              db.settings.topAnnEnabled = false;
+              db.settings.topAnnText = "";
+              db.settings.topAnnMode = "static";
+              db.settings.topAnnBg = "#ffffff";
+              db.settings.topAnnColor = "#ffffff";
+            }
+            if (db.settings && db.settings.popupEnabled === undefined) {
+              db.settings.popupEnabled = false;
+              db.settings.popupTitle = "";
+              db.settings.popupImg = "";
+              db.settings.popupLink = "";
+            }
+          } catch (e) {}
+        }
+      }
+      doMigrations();
+      saveDatabase(); // push to Firebase
     }
-  }
-
-  // Migration for separate Webhook URLs
-  if (db.settings) {
-    let migrated = false;
-    if (db.settings.webhookRegisterUrl === undefined) {
-      db.settings.webhookRegisterUrl = db.settings.webhookUrl || "";
-      migrated = true;
+  }).catch(err => {
+    console.warn("Firebase read failed, falling back to localStorage", err);
+    const localDb = localStorage.getItem("nexa_store_db_v6");
+    if (localDb) {
+      try { db = JSON.parse(localDb); } catch (e) {}
     }
-    if (db.settings.webhookRegisterEnabled === undefined) {
-      db.settings.webhookRegisterEnabled = db.settings.webhookOnRegister !== false;
-      migrated = true;
-    }
-    if (db.settings.webhookPurchaseUrl === undefined) {
-      db.settings.webhookPurchaseUrl = db.settings.webhookUrl || "";
-      migrated = true;
-    }
-    if (db.settings.webhookPurchaseEnabled === undefined) {
-      db.settings.webhookPurchaseEnabled = db.settings.webhookOnPurchase !== false;
-      migrated = true;
-    }
-    if (migrated) {
-      saveDatabase();
-    }
-  }
-
-  // Force update default admin password
-  const adminUser = db.users.find(u => u.username === "admin");
-  if (adminUser) {
-    adminUser.password = "0952235101Asd@@";
-    saveDatabase();
-  }
-
-  // Automatic upgrade from default white/black to rose theme if setting hasn't been custom modified
-  if (db.settings && db.settings.colorPrimary === "#ffffff") {
-    db.settings.colorPrimary = "#ff477e";
-    db.settings.colorBg = "#0b0f19";
-    saveDatabase();
-  }
+    doMigrations();
+  });
 }
 
 function saveDatabase() {
+  FB_REF.set(db).catch(err => console.warn("Firebase write failed", err));
   localStorage.setItem("nexa_store_db_v6", JSON.stringify(db));
 }
 
+// Realtime sync: detect changes from other devices
+FB_REF.on('value', snapshot => {
+  const data = snapshot.val();
+  if (!data) return;
+  const curr = JSON.stringify(db);
+  const next = JSON.stringify(data);
+  if (next !== curr) {
+    const beforeView = document.querySelector('.view.active')?.id || null;
+    db = data;
+    localStorage.setItem("nexa_store_db_v6", JSON.stringify(db));
+    if (beforeView) {
+      showView(beforeView);
+    }
+  }
+});
+
 // ================= INITIALIZATION & STYLE INJECTION =================
 document.addEventListener("DOMContentLoaded", () => {
-  loadDatabase();
-  applySettings();
-  initAuthSession();
-  renderStoreFront();
-  setupAdminForms();
-  showView("shop");
-  checkPopupAnnouncement();
+  loadDatabase(() => {
+    applySettings();
+    initAuthSession();
+    renderStoreFront();
+    setupAdminForms();
+    showView("shop");
+    checkPopupAnnouncement();
+  });
 });
 
 function applySettings() {
