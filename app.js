@@ -1225,7 +1225,6 @@ function checkout() {
 function renderAllAdminLists() {
   renderAdminProductsList();
   renderAdminCategoriesList();
-  renderAdminOrdersList();
   renderAdminUsersList();
 }
 
@@ -1250,7 +1249,6 @@ function switchAdminTab(tabName, menuItem) {
 
   // Re-render list when switching to relevant tabs
   if (tabName === "order-users") {
-    renderAdminOrdersList();
     renderAdminUsersList();
   } else if (tabName === "product-settings") {
     renderAdminProductsList();
@@ -1885,7 +1883,7 @@ function renderAdminUsersList() {
   members.forEach(u => {
     const statusIcon = u.status === "suspended" ? "🔴" : "🟢";
     const statusText = u.status === "suspended" ? "ระงับ" : "ปกติ";
-    const editBtn = `<button class="btn-icon" onclick="openAdminEditUserModal('${u.username}')" title="จัดการบัญชีสมาชิก" style="background: rgba(255,255,255,0.05); border-radius: 4px; padding: 6px 12px; border: 1px solid var(--glass-border); color: var(--text-color); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-gear" style="color: var(--primary-color)"></i> จัดการ</button>`;
+    const editBtn = `<button class="btn-icon" onclick="openAdminEditUserModal('${u.username}')" title="จัดการบัญชีสมาชิก" style="background: rgba(255,255,255,0.05); border-radius: 4px; padding: 6px 12px; border: 1px solid var(--glass-border); color: var(--text-color); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-gear" style="color: var(--primary-color)"></i></button>`;
     const deleteBtn = `<button class="btn-icon delete" onclick="deleteUser('${u.username}')" title="ลบผู้ใช้งาน" style="background: rgba(239, 68, 68, 0.1); border-radius: 4px; padding: 6px 12px; border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; cursor: pointer;"><i class="fa-solid fa-user-minus"></i></button>`;
     
     tbody.innerHTML += `

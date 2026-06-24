@@ -192,7 +192,7 @@
 
         <div class="admin-menu-item" onclick="switchAdminTab('banner-settings', this)"><i class="fa-solid fa-image"></i> ตั้งค่าแบนเนอร์โปรโมท</div>
         <div class="admin-menu-item" onclick="switchAdminTab('product-settings', this)"><i class="fa-solid fa-box-open"></i> จัดการสินค้าหน้าร้าน</div>
-        <div class="admin-menu-item" onclick="switchAdminTab('order-users', this)"><i class="fa-solid fa-users"></i> ออเดอร์ & สมาชิก</div>
+        <div class="admin-menu-item" onclick="switchAdminTab('order-users', this)"><i class="fa-solid fa-users"></i> รายชื่อสมาชิก</div>
         <div class="admin-menu-item" onclick="switchAdminTab('db-settings', this)"><i class="fa-solid fa-database"></i> สำรองข้อมูล (Backup)</div>
       </aside>
 
@@ -1006,53 +1006,26 @@
         <!-- === TAB: ORDER & USERS === -->
         <div class="admin-section" id="admin-tab-order-users">
           <div class="admin-header">
-            <h2>ออเดอร์ & ประวัติสมาชิก</h2>
+            <h2>รายชื่อสมาชิกทั้งหมด</h2>
           </div>
 
-          <div class="settings-grid" style="grid-template-columns: 1.2fr 0.8fr;">
-            
-            <!-- Orders List -->
-            <div class="admin-card glass-effect">
-              <div class="admin-card-title"><i class="fa-solid fa-file-invoice-dollar"></i> ประวัติการสั่งซื้อสินค้าทั้งหมด</div>
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>เลขออเดอร์</th>
-                      <th>ผู้ซื้อ</th>
-                      <th>สินค้า</th>
-                      <th>ราคารวม</th>
-                      <th>วันเวลาที่สั่ง</th>
-                      <th>จัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-orders-table-body">
-                    <!-- JS list all orders -->
-                  </tbody>
-                </table>
-              </div>
+          <div class="admin-card glass-effect" style="max-width: 700px;">
+            <div class="admin-card-title"><i class="fa-solid fa-users"></i> รายชื่อสมาชิกทั้งหมด</div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>ชื่อผู้ใช้</th>
+                    <th>สถานะ</th>
+                    <th>ยศ/สิทธิ์</th>
+                    <th>การจัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-table-body">
+                  <!-- JS list all users -->
+                </tbody>
+              </table>
             </div>
-
-            <!-- Users List -->
-            <div class="admin-card glass-effect">
-              <div class="admin-card-title"><i class="fa-solid fa-users"></i> รายชื่อสมาชิกทั้งหมด</div>
-              <div class="table-wrapper">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ชื่อผู้ใช้</th>
-                      <th>สถานะ</th>
-                      <th>ยศ/สิทธิ์</th>
-                      <th>การจัดการ</th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-users-table-body">
-                    <!-- JS list all users -->
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
           </div>
         </div>
 
